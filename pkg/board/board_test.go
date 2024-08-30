@@ -3,6 +3,7 @@ package board_test // Adjust the package name according to the folder, e.g., boa
 
 import (
     "testing"
+    "github.com/colmak/go-chess-go/pkg/board"
 )
 
 // TestMain initializes the package and verifies no errors during startup.
@@ -32,5 +33,19 @@ func TestBasicFunctionality(t *testing.T) {
     // Example assertion (replace with actual function calls and checks):
     if 1+1 != 2 {
         t.Errorf("Basic functionality failed; expected 2, got something else")
+    }
+}
+
+func TestNewBoard(t *testing.T) {
+    board := board.NewBoard()
+
+    // Check if the board initializes with a white rook at (0, 0).
+    if board.Squares[0][0] != (Rook | White) {
+        t.Errorf("Expected white rook at (0, 0), got %d", board.Squares[0][0])
+    }
+
+    // Check if the board initializes with a black pawn at (6, 0).
+    if board.Squares[6][0] != (Pawn | Black) {
+        t.Errorf("Expected black pawn at (6, 0), got %d", board.Squares[6][0])
     }
 }

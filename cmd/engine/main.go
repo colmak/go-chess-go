@@ -2,6 +2,7 @@ package main
 
 import (
     "fmt"
+    "github.com/colmak/go-chess-go/pkg/board"
 )
 
 func initialize() {
@@ -11,5 +12,6 @@ func initialize() {
 
 func main() {
     initialize()
-    
+    b := board.NewBoard()
+    fmt.Println(b.Squares)
 }
