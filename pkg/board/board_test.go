@@ -1,51 +1,54 @@
-// Template for general tests in any package
-package board_test // Adjust the package name according to the folder, e.g., board_test, uci_test, etc.
+package board
 
 import (
     "testing"
-    "github.com/colmak/go-chess-go/pkg/board"
 )
 
-// TestMain initializes the package and verifies no errors during startup.
-func TestMain(m *testing.M) {
-    // Setup code before running the tests can be added here, if needed.
-    // Use m.Run() to execute tests.
-    m.Run()
-}
-
-// TestInitialization is a general placeholder test to ensure initialization works without crashing.
-func TestInitialization(t *testing.T) {
-    // Placeholder for initialization testing.
-    // Use this to test if the package components can be initialized without errors.
-    // Replace with actual initialization checks for each package.
-
-    // Example assertion (replace with relevant checks for each package):
-    if false {
-        t.Fatal("Expected initialization to succeed, but got an error")
-    }
-}
-
-// TestBasicFunctionality is a placeholder for testing basic functionality of the package.
-func TestBasicFunctionality(t *testing.T) {
-    // Placeholder for basic functionality testing.
-    // Use this as a template for testing key functions of the package.
-
-    // Example assertion (replace with actual function calls and checks):
-    if 1+1 != 2 {
-        t.Errorf("Basic functionality failed; expected 2, got something else")
-    }
-}
-
 func TestNewBoard(t *testing.T) {
-    board := board.NewBoard()
-
-    // Check if the board initializes with a white rook at (0, 0).
-    if board.Squares[0][0] != (Rook | White) {
-        t.Errorf("Expected white rook at (0, 0), got %d", board.Squares[0][0])
+    b := NewBoard()
+    if b.Squares[0][0] != (Rook | White) {
+        t.Errorf("Expected Rook at (0,0), got %d", b.Squares[0][0])
     }
+}
 
-    // Check if the board initializes with a black pawn at (6, 0).
-    if board.Squares[6][0] != (Pawn | Black) {
-        t.Errorf("Expected black pawn at (6, 0), got %d", board.Squares[6][0])
+func TestMovePiece(t *testing.T) {
+    b := NewBoard()
+    start := Position{Row: 1, Col: 0}
+    end := Position{Row: 3, Col: 0}
+    if !b.MovePiece(start, end) {
+        t.Error("Expected move to be successful")
+    }
+    if b.Squares[3][0] != (Pawn | White) {
+        t.Errorf("Expected Pawn at (3,0), got %d", b.Squares[3][0])
+    }
+    if b.Squares[1][0] != 0 {
+        t.Errorf("Expected empty square at (1,0), got %d", b.Squares[1][0])
+    }
+}
+
+func TestUndoMove(t *testing.T) {
+    b := NewBoard()
+    start := Position{Row: 1, Col: 0}
+    end := Position{Row: 3, Col: 0}
+    move := Move{Start: start, End: end, Piece: b.GetPieceAt(start)}
+    b.MovePiece(start, end)
+    b.UndoMove(move)
+    if b.Squares[1][0] != (Pawn | White) {
+        t.Errorf("Expected Pawn at (1,0), got %d", b.Squares[1][0])
+    }
+    if b.Squares[3][0] != 0 {
+        t.Errorf("Expected empty square at (3,0), got %d", b.Squares[3][0])
+    }
+}
+
+func TestIsEmpty(t *testing.T) {
+    b := NewBoard()
+    pos := Position{Row: 2, Col: 2}
+    if !b.IsEmpty(pos) {
+        t.Error("Expected position to be empty")
+    }
+    pos = Position{Row: 0, Col: 0}
+    if b.IsEmpty(pos) {
+        t.Error("Expected position to be occupied")
     }
 }

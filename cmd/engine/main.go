@@ -13,5 +13,5 @@ func initialize() {
 func main() {
     initialize()
     b := board.NewBoard()
-    fmt.Println(b.Squares)
+    b.PrintBoard()
 }
