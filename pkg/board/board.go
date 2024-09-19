@@ -4,6 +4,10 @@ import "fmt"
 
 type Board struct {
     Squares [8][8]int 
+    WhiteKingMoved bool
+    BlackKingMoved bool
+    WhiteRookMoved [2]bool
+    BlackRookMoved [2]bool
 }
 
 type Position struct {
