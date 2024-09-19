@@ -17,14 +17,59 @@ func (b *Board) MovePiece(start, end Position) bool {
         return false // Can't capture your own piece
     }
 
-    // Check if the move is legal for the piece
+    // Check if the move is legal for the piece, including castling logic for kings
     if !b.isLegalMove(piece, start, end) {
         return false // The move is not legal for this piece
+    }
+
+    // Handle castling logic
+    if piece&King != 0 && abs(start.Col-end.Col) == 2 {
+        if end.Col == 6 { // Kingside castling
+            if piece&Black != 0 {
+                b.Squares[7][5] = b.Squares[7][7] // Move rook
+                b.Squares[7][7] = 0
+            } else {
+                b.Squares[0][5] = b.Squares[0][7] // Move rook
+                b.Squares[0][7] = 0
+            }
+        } else if end.Col == 2 { // Queenside castling
+            if piece&Black != 0 {
+                b.Squares[7][3] = b.Squares[7][0] // Move rook
+                b.Squares[7][0] = 0
+            } else {
+                b.Squares[0][3] = b.Squares[0][0] // Move rook
+                b.Squares[0][0] = 0
+            }
+        }
     }
 
     // Perform the move
     b.Squares[end.Row][end.Col] = piece
     b.Squares[start.Row][start.Col] = 0
+
+    // Track if the king or rooks moved (to disable castling)
+    if piece&King != 0 {
+        if piece&Black != 0 {
+            b.BlackKingMoved = true
+        } else {
+            b.WhiteKingMoved = true
+        }
+    } else if piece&Rook != 0 {
+        if piece&Black != 0 {
+            if start.Row == 7 && start.Col == 0 {
+                b.BlackRookMoved[0] = true // Queenside rook
+            } else if start.Row == 7 && start.Col == 7 {
+                b.BlackRookMoved[1] = true // Kingside rook
+            }
+        } else {
+            if start.Row == 0 && start.Col == 0 {
+                b.WhiteRookMoved[0] = true // Queenside rook
+            } else if start.Row == 0 && start.Col == 7 {
+                b.WhiteRookMoved[1] = true // Kingside rook
+            }
+        }
+    }
+
     return true
 }
 
@@ -71,8 +116,47 @@ func (b *Board) isLegalQueenMove(start, end Position) bool {
 }
 
 func (b *Board) isLegalKingMove(start, end Position) bool {
-    // Kings move one square in any direction
-    return abs(start.Row-end.Row) <= 1 && abs(start.Col-end.Col) <= 1
+    // Check if it's a normal one-square king move
+    if abs(start.Row-end.Row) <= 1 && abs(start.Col-end.Col) <= 1 {
+        return true
+    }
+    
+    // Castling logic
+    piece := b.GetPieceAt(start)
+    isBlack := piece&Black != 0
+    
+    // Castling kingside
+    if start.Row == end.Row && abs(start.Col-end.Col) == 2 {
+        if end.Col == 6 { // Kingside castling
+            if (isBlack && start.Row == 7 && b.canCastleKingside(true)) || (!isBlack && start.Row == 0 && b.canCastleKingside(false)) {
+                // Move the rook during castling
+                if isBlack {
+                    b.Squares[7][5] = b.Squares[7][7] // Move rook
+                    b.Squares[7][7] = 0
+                } else {
+                    b.Squares[0][5] = b.Squares[0][7] // Move rook
+                    b.Squares[0][7] = 0
+                }
+                return true
+            }
+        }
+        // Castling queenside
+        if end.Col == 2 { 
+            if (isBlack && start.Row == 7 && b.canCastleQueenside(true)) || (!isBlack && start.Row == 0 && b.canCastleQueenside(false)) {
+                // Move the rook during castling
+                if isBlack {
+                    b.Squares[7][3] = b.Squares[7][0] // Move rook
+                    b.Squares[7][0] = 0
+                } else {
+                    b.Squares[0][3] = b.Squares[0][0] // Move rook
+                    b.Squares[0][0] = 0
+                }
+                return true
+            }
+        }
+    }
+    
+    return false
 }
 
 func (b *Board) isLegalPawnMove(piece int, start, end Position) bool {
