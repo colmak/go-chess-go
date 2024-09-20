@@ -90,27 +90,26 @@ func (b *Board) IsStalemate(isBlack bool) bool {
 
     return true // No legal moves, stalemate
 }
+
 func (b *Board) canCaptureEnPassant(start, end Position, isBlack bool) bool {
-    // Check the position of the target square
-    if (isBlack && start.Row == 3) || (!isBlack && start.Row == 4) {
-        // Determine the pawn that could be captured en passant
+    // Check the row of the current pawn to ensure it's in the right position for en passant
+    if (isBlack && start.Row == 4) || (!isBlack && start.Row == 3) {
+        // Determine the adjacent pawn that could be captured en passant
         sidePawnPos := Position{Row: start.Row, Col: end.Col}
         sidePawn := b.GetPieceAt(sidePawnPos)
 
-        // Check if the pawn is of the opposite color and just moved two squares
+        // Check if the side pawn is an opponent's pawn
         if sidePawn != 0 && sidePawn&Pawn != 0 && ((sidePawn&Black != 0) != isBlack) {
-            lastRow := 6
-            if isBlack {
-                lastRow = 1
-            }
-            if b.GetPieceAt(Position{Row: lastRow, Col: end.Col}) == sidePawn {
+            // Verify that the last move was a two-square pawn advance
+            lastMove := b.GetLastMove()  // Assuming you have a way to track the last move
+            if lastMove.Piece&Pawn != 0 && lastMove.Start.Row == (start.Row-2) && lastMove.End == sidePawnPos {
                 return true
             }
         }
     }
-
     return false
 }
+
 
 
 func (b *Board) canCastleKingside(isBlack bool) bool {
@@ -133,4 +132,17 @@ func (b *Board) isEnemyPiece(piece int, isBlack bool) bool {
         return (piece & White) != 0 // True if the piece is White
     }
     return (piece & Black) != 0 // True if the piece is Black
+}
+
+func (b *Board) IsDrawByFiftyMoveRule() bool {
+    return b.FiftyMoveCount >= 50
+}
+
+func (b *Board) IsDrawByThreefoldRepetition() bool {
+    for _, count := range b.PositionHistory {
+        if count >= 3 {
+            return true
+        }
+    }
+    return false
 }

@@ -8,6 +8,10 @@ type Board struct {
     BlackKingMoved bool
     WhiteRookMoved [2]bool
     BlackRookMoved [2]bool
+    CurrentTurn int     
+    HalfMoveClock int       
+    PositionHistory map[string]int 
+    LastMove Move
 }
 
 type Position struct {
@@ -39,7 +43,6 @@ func (b *Board) isPathClear(start, end Position) bool {
     return true
 }
 
-
 func (b *Board) PrintBoard() {
     for i := 0; i < 8; i++ {
         for j := 0; j < 8; j++ {
@@ -49,11 +52,18 @@ func (b *Board) PrintBoard() {
     }
 }
 
-
 func NewBoard() *Board {
-    b := &Board{}
-    b.initPosition()
+    b := &Board{
+        CurrentTurn:     White,
+        HalfMoveClock:   0,
+        PositionHistory: make(map[string]int),
+    }
+    b.initPosition() 
     return b
+}
+
+func (b *Board) GetCurrentTurn() int {
+    return b.CurrentTurn
 }
 
 func (b *Board) initPosition() {

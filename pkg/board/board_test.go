@@ -147,14 +147,36 @@ func TestPawnMovement(t *testing.T) {
     if !b.MovePiece(Position{1, 0}, Position{2, 1}) {
         t.Error("Expected pawn to capture diagonally")
     }
-    
+
     // Test en passant
     b = NewBoard()
-    b.MovePiece(Position{6, 1}, Position{4, 1}) // Black pawn moves two steps
-    b.MovePiece(Position{1, 0}, Position{3, 0}) // White pawn moves
-    b.MovePiece(Position{4, 1}, Position{3, 1}) // Black pawn moves one step
-    if !b.CanEnPassant(Position{3, 1}) {
-        t.Error("Expected en passant to be possible")
+    
+    // Black pawn moves two steps forward
+    if !b.MovePiece(Position{6, 1}, Position{4, 1}) {
+        t.Error("Expected black pawn to move forward by 2 steps")
+    }
+    
+    // White pawn moves two steps forward
+    if !b.MovePiece(Position{1, 0}, Position{3, 0}) {
+        t.Error("Expected white pawn to move forward by 2 steps")
+    }
+    
+    // Check en passant capture (white pawn captures black pawn)
+    if !b.canCaptureEnPassant(Position{3, 0}, Position{4, 1}, false) {
+        t.Error("Expected en passant to be possible for white pawn")
+    }
+    
+    // Perform en passant move
+    if !b.MovePiece(Position{3, 0}, Position{4, 1}) {
+        t.Error("Expected en passant capture to be successful")
+    }
+
+    // Check that the black pawn was captured
+    if b.GetPieceAt(Position{4, 1}) != (Pawn | White) {
+        t.Error("Expected white pawn to be at (4,1) after en passant")
+    }
+    if b.GetPieceAt(Position{4, 0}) != 0 {
+        t.Error("Expected black pawn to be captured")
     }
 }
 
@@ -306,6 +328,12 @@ func TestThreefoldRepetition(t *testing.T) {
     // Simulate threefold repetition of a position
     b.MovePiece(Position{1, 0}, Position{2, 0})
     b.MovePiece(Position{2, 0}, Position{1, 0}) // Repeat back and forth
+
+    b.MovePiece(Position{1, 0}, Position{2, 0})
+    b.MovePiece(Position{2, 0}, Position{1, 0}) // Repeat again
+
+    b.MovePiece(Position{1, 0}, Position{2, 0})
+    b.MovePiece(Position{2, 0}, Position{1, 0}) // Third time
 
     if !b.IsDrawByThreefoldRepetition() {
         t.Error("Expected game to be a draw by threefold repetition")

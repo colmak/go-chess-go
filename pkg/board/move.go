@@ -1,5 +1,8 @@
 package board
 
+import "fmt"
+
+// After each move, toggle the current turn
 func (b *Board) MovePiece(start, end Position) bool {
     piece := b.GetPieceAt(start)
     if piece == 0 {
@@ -17,61 +20,28 @@ func (b *Board) MovePiece(start, end Position) bool {
         return false // Can't capture your own piece
     }
 
-    // Check if the move is legal for the piece, including castling logic for kings
+    // Check if the move is legal for the piece
     if !b.isLegalMove(piece, start, end) {
         return false // The move is not legal for this piece
-    }
-
-    // Handle castling logic
-    if piece&King != 0 && abs(start.Col-end.Col) == 2 {
-        if end.Col == 6 { // Kingside castling
-            if piece&Black != 0 {
-                b.Squares[7][5] = b.Squares[7][7] // Move rook
-                b.Squares[7][7] = 0
-            } else {
-                b.Squares[0][5] = b.Squares[0][7] // Move rook
-                b.Squares[0][7] = 0
-            }
-        } else if end.Col == 2 { // Queenside castling
-            if piece&Black != 0 {
-                b.Squares[7][3] = b.Squares[7][0] // Move rook
-                b.Squares[7][0] = 0
-            } else {
-                b.Squares[0][3] = b.Squares[0][0] // Move rook
-                b.Squares[0][0] = 0
-            }
-        }
     }
 
     // Perform the move
     b.Squares[end.Row][end.Col] = piece
     b.Squares[start.Row][start.Col] = 0
 
-    // Track if the king or rooks moved (to disable castling)
-    if piece&King != 0 {
-        if piece&Black != 0 {
-            b.BlackKingMoved = true
-        } else {
-            b.WhiteKingMoved = true
-        }
-    } else if piece&Rook != 0 {
-        if piece&Black != 0 {
-            if start.Row == 7 && start.Col == 0 {
-                b.BlackRookMoved[0] = true // Queenside rook
-            } else if start.Row == 7 && start.Col == 7 {
-                b.BlackRookMoved[1] = true // Kingside rook
-            }
-        } else {
-            if start.Row == 0 && start.Col == 0 {
-                b.WhiteRookMoved[0] = true // Queenside rook
-            } else if start.Row == 0 && start.Col == 7 {
-                b.WhiteRookMoved[1] = true // Kingside rook
-            }
-        }
+    // Update PositionHistory (you can create a unique key for the board state)
+    key := fmt.Sprintf("%d%d-%d%d", start.Row, start.Col, end.Row, end.Col)
+    b.PositionHistory[key]++ // Increment the count for this position
+
+    // Toggle the turn
+    b.CurrentTurn = Black
+    if piece&Black != 0 {
+        b.CurrentTurn = White
     }
 
     return true
 }
+
 
 // Method to check if a move is legal for a given piece
 func (b *Board) isLegalMove(piece int, start, end Position) bool {
