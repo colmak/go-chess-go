@@ -33,6 +33,15 @@ func (b *Board) MovePiece(start, end Position) bool {
     key := fmt.Sprintf("%d%d-%d%d", start.Row, start.Col, end.Row, end.Col)
     b.PositionHistory[key]++ // Increment the count for this position
 
+    b.MoveCount++
+    if piece&Pawn == 0 && (start.Row != end.Row) { // Assuming no pawn movement
+        b.FiftyMoveCount++ // Increment fifty move counter for non-pawn moves
+    } else {
+        b.FiftyMoveCount = 0 // Reset if a pawn moves or a capture occurs
+    }
+
+    b.LastMove = Move{Start: start, End: end, Piece: piece}
+
     // Toggle the turn
     b.CurrentTurn = Black
     if piece&Black != 0 {
@@ -179,4 +188,8 @@ func (b *Board) GenerateMoves(pos Position) []Position {
 
 func isWithinBounds(pos Position) bool {
     return pos.Row >= 0 && pos.Row < 8 && pos.Col >= 0 && pos.Col < 8
+}
+
+func (b *Board) GetLastMove() Move {
+    return b.LastMove
 }
