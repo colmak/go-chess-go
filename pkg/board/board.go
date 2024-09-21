@@ -9,7 +9,9 @@ type Board struct {
     WhiteRookMoved [2]bool
     BlackRookMoved [2]bool
     CurrentTurn int     
-    HalfMoveClock int       
+    HalfMoveClock int
+    MoveCount int  
+    FiftyMoveCount int // Different than MoveCount   
     PositionHistory map[string]int 
     LastMove Move
 }
