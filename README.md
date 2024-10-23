@@ -1,3 +1,3 @@
 # go-chess-go
 
-Chess engine in Go
+WIP Chess engine in Go
