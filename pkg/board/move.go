@@ -139,37 +139,34 @@ func (b *Board) isLegalKingMove(start, end Position) bool {
 }
 
 func (b *Board) isLegalPawnMove(piece int, start, end Position) bool {
-    // Determine the direction based on piece color
     direction := 1
     if piece&Black != 0 {
         direction = -1
     }
     
-    // Pawns move forward by one or two squares on their first move
-    if start.Col == end.Col {
-        if start.Row+direction == end.Row && b.IsEmpty(end) {
+    // Pawns move forward
+    if start.Col == end.Col && b.IsEmpty(end) {
+        if start.Row+direction == end.Row { 
             return true
         }
-        if (start.Row == 1 || start.Row == 6) && start.Row+2*direction == end.Row && b.IsEmpty(end) && b.IsEmpty(Position{Row: start.Row + direction, Col: start.Col}) {
-            return true
-        }
-    }
-    
-    // Pawns capture diagonally
-    if abs(start.Col-end.Col) == 1 && start.Row+direction == end.Row {
-        // Regular capture
-        if !b.IsEmpty(end) && (b.GetPieceAt(end)&White != piece&White) {
-            return true
-        }
-        
-        // En passant capture
-        if b.canCaptureEnPassant(start, end, piece&Black != 0) {
+        if (start.Row == 1 && piece&White != 0 || start.Row == 6 && piece&Black != 0) && start.Row+2*direction == end.Row && b.IsEmpty(Position{start.Row + direction, start.Col}) {
             return true
         }
     }
     
+    // Diagonal capture
+    if abs(start.Col-end.Col) == 1 && start.Row+direction == end.Row && !b.IsEmpty(end) && (b.GetPieceAt(end)&White != piece&White) {
+        return true
+    }
+    
+    // En passant
+    if b.canCaptureEnPassant(start, end, piece&Black != 0) {
+        return true
+    }
+
     return false
 }
+
 
 func (b *Board) UndoMove(move Move) {
     b.Squares[move.Start.Row][move.Start.Col] = move.Piece

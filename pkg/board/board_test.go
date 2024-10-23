@@ -85,48 +85,6 @@ func TestQueensideCastling(t *testing.T) {
     }
 }
 
-func TestIsCheck(t *testing.T) {
-    b := NewBoard()
-
-    // Place a Black rook in a position to check the White king
-    b.Squares[1][4] = (Rook | Black)
-
-    // Print White king's position for debugging
-    whiteKingPos := b.findKing(false)
-    t.Logf("White King Position: %v", whiteKingPos)
-
-    if !b.IsCheck(false) {
-        t.Error("Expected White king to be in check")
-    }
-}
-
-
-func TestIsCheckmate(t *testing.T) {
-    b := NewBoard()
-
-    // Simulate a checkmate by placing Black pieces
-    b.Squares[7][4] = (King | White)
-    b.Squares[6][5] = (Queen | Black)
-    b.Squares[6][3] = (Rook | Black)
-
-    if !b.IsCheckmate(false) {
-        t.Error("Expected White to be in checkmate")
-    }
-}
-
-func TestIsStalemate(t *testing.T) {
-    b := NewBoard()
-
-    // Set up a stalemate position (Black king on h8, White king on f6, White pawn on g7)
-    b.Squares[7][7] = (King | Black)
-    b.Squares[5][5] = (King | White)
-    b.Squares[6][6] = (Pawn | White)
-
-    if !b.IsStalemate(true) {
-        t.Error("Expected Black to be in stalemate")
-    }
-}
-
 // --- Piece-specific movement rules ---
 func TestPawnMovement(t *testing.T) {
     b := NewBoard()

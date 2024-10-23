@@ -16,3 +16,10 @@ func sign(x int) int {
     }
     return 0
 }
+
+func direction(isBlack bool) int {
+    if isBlack {
+        return -1
+    }
+    return 1
+}

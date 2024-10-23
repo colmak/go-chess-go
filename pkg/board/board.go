@@ -27,21 +27,21 @@ type Move struct {
     Piece int
 }
 
-// Check if the path is clear between the start and end positions (for rooks, bishops, queens)
 func (b *Board) isPathClear(start, end Position) bool {
     rowStep := sign(end.Row - start.Row)
     colStep := sign(end.Col - start.Col)
-
+    
     currentRow := start.Row + rowStep
     currentCol := start.Col + colStep
 
     for currentRow != end.Row || currentCol != end.Col {
-        if !b.IsEmpty(Position{Row: currentRow, Col: currentCol}) {
+        if !b.IsEmpty(Position{currentRow, currentCol}) {
             return false
         }
         currentRow += rowStep
         currentCol += colStep
     }
+
     return true
 }
 

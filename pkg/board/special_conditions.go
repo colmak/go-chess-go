@@ -92,17 +92,15 @@ func (b *Board) IsStalemate(isBlack bool) bool {
 }
 
 func (b *Board) canCaptureEnPassant(start, end Position, isBlack bool) bool {
-    // Check the row of the current pawn to ensure it's in the right position for en passant
-    if (isBlack && start.Row == 4) || (!isBlack && start.Row == 3) {
-        // Determine the adjacent pawn that could be captured en passant
+    lastMove := b.GetLastMove()
+
+    // Check en passant eligibility
+    if (isBlack && start.Row == 3) || (!isBlack && start.Row == 4) {
         sidePawnPos := Position{Row: start.Row, Col: end.Col}
         sidePawn := b.GetPieceAt(sidePawnPos)
 
-        // Check if the side pawn is an opponent's pawn
-        if sidePawn != 0 && sidePawn&Pawn != 0 && ((sidePawn&Black != 0) != isBlack) {
-            // Verify that the last move was a two-square pawn advance
-            lastMove := b.GetLastMove()  // Assuming you have a way to track the last move
-            if lastMove.Piece&Pawn != 0 && lastMove.Start.Row == (start.Row-2) && lastMove.End == sidePawnPos {
+        if sidePawn != 0 && sidePawn&Pawn != 0 && (sidePawn&Black != 0) != isBlack {
+            if lastMove.Start.Row == sidePawnPos.Row+2*direction(isBlack) && lastMove.End == sidePawnPos {
                 return true
             }
         }
