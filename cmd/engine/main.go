@@ -34,6 +34,7 @@ func main() {
 
 // getStatus returns the current state of the board
 func getStatus(c *gin.Context) {
+    gameBoard.PrintBoard()
     c.JSON(http.StatusOK, gin.H{
         "board": gameBoard.Squares, // Return the board's squares array
         "turn":  gameBoard.CurrentTurn,
