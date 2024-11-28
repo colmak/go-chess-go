@@ -64,7 +64,6 @@ type Move struct {
     EndCol   int `json:"end_col"`
 }
 
-// makeMove processes a chess move
 func makeMove(c *gin.Context) {
     var move Move
     if err := c.ShouldBindJSON(&move); err != nil {
@@ -75,7 +74,9 @@ func makeMove(c *gin.Context) {
     start := board.Position{Row: move.StartRow, Col: move.StartCol}
     end := board.Position{Row: move.EndRow, Col: move.EndCol}
 
-    // Attempt to make the move using the board's logic
+    fmt.Printf("Current turn before move: %d\n", gameBoard.CurrentTurn)
+    fmt.Printf("Switching turn after move...\n")
+
     if gameBoard.MovePiece(start, end) {
         c.JSON(http.StatusOK, gin.H{
             "message": "Move successful",

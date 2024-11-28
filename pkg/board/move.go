@@ -42,9 +42,9 @@ func (b *Board) MovePiece(start, end Position) bool {
 
     b.LastMove = Move{Start: start, End: end, Piece: piece}
 
-    // Toggle the turn
-    b.CurrentTurn = Black
-    if piece&Black != 0 {
+    if b.CurrentTurn == White {
+        b.CurrentTurn = Black
+    } else {
         b.CurrentTurn = White
     }
 
