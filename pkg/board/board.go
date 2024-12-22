@@ -11,7 +11,7 @@ type Board struct {
     CurrentTurn int     
     HalfMoveClock int
     MoveCount int  
-    FiftyMoveCount int // Different than MoveCount   
+    FiftyMoveCount int
     PositionHistory map[string]int 
     LastMove Move
 }

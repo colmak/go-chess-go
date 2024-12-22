@@ -2,25 +2,26 @@ package board
 
 import "fmt"
 
-// After each move, toggle the current turn
 func (b *Board) MovePiece(start, end Position) bool {
     piece := b.GetPieceAt(start)
     if piece == 0 {
         return false // No piece to move
     }
 
-    // Check if the move is within board boundaries
     if !isWithinBounds(start) || !isWithinBounds(end) {
         return false // Move out of bounds
     }
 
-    // Ensure the destination is not occupied by a piece of the same color
+    // Ensure the piece belongs to the current player
+    if (piece&White == 0 || b.CurrentTurn == White) && (piece&Black == 0 || b.CurrentTurn == Black) {
+        return true // It's valid to move the piece
+    }
+
     destPiece := b.GetPieceAt(end)
     if destPiece != 0 && (destPiece&White) == (piece&White) {
         return false // Can't capture your own piece
     }
 
-    // Check if the move is legal for the piece
     if !b.isLegalMove(piece, start, end) {
         return false // The move is not legal for this piece
     }
@@ -29,17 +30,27 @@ func (b *Board) MovePiece(start, end Position) bool {
     b.Squares[end.Row][end.Col] = piece
     b.Squares[start.Row][start.Col] = 0
 
-    // Update PositionHistory (you can create a unique key for the board state)
-    key := fmt.Sprintf("%d%d-%d%d", start.Row, start.Col, end.Row, end.Col)
-    b.PositionHistory[key]++ // Increment the count for this position
-
-    b.MoveCount++
-    if piece&Pawn == 0 && (start.Row != end.Row) { // Assuming no pawn movement
-        b.FiftyMoveCount++ // Increment fifty move counter for non-pawn moves
-    } else {
-        b.FiftyMoveCount = 0 // Reset if a pawn moves or a capture occurs
+    // Check for pawn promotion
+    if piece&Pawn != 0 {
+        if (piece&White != 0 && end.Row == 7) || (piece&Black != 0 && end.Row == 0) {
+            b.Squares[end.Row][end.Col] = Queen | (piece & (White | Black)) // Promote to Queen
+        }
     }
 
+    // Update position history
+    key := fmt.Sprintf("%v", b.Squares)
+    b.PositionHistory[key]++
+
+    b.MoveCount++
+
+    // Update fifty-move rule
+    if (piece & 0b111) != Pawn && destPiece == 0 {
+        b.FiftyMoveCount++
+    } else {
+        b.FiftyMoveCount = 0
+    }
+
+    // Update last move
     b.LastMove = Move{Start: start, End: end, Piece: piece}
 
     if b.CurrentTurn == White {
@@ -52,121 +63,91 @@ func (b *Board) MovePiece(start, end Position) bool {
 }
 
 
-// Method to check if a move is legal for a given piece
+
 func (b *Board) isLegalMove(piece int, start, end Position) bool {
-    switch piece & 0b111 { // Mask to get the piece type
+    pieceType := piece & 0b111
+
+    switch pieceType {
     case Rook:
-        return b.isLegalRookMove(start, end)
+        return (start.Row == end.Row || start.Col == end.Col) && b.isPathClear(start, end)
     case Knight:
-        return b.isLegalKnightMove(start, end)
+        rowDiff := abs(start.Row - end.Row)
+        colDiff := abs(start.Col - end.Col)
+        return (rowDiff == 2 && colDiff == 1) || (rowDiff == 1 && colDiff == 2)
     case Bishop:
-        return b.isLegalBishopMove(start, end)
+        return abs(start.Row-end.Row) == abs(start.Col-end.Col) && b.isPathClear(start, end)
     case Queen:
-        return b.isLegalQueenMove(start, end)
+        return ((start.Row == end.Row || start.Col == end.Col) || abs(start.Row-end.Row) == abs(start.Col-end.Col)) && b.isPathClear(start, end)
     case King:
-        return b.isLegalKingMove(start, end)
+        if abs(start.Row-end.Row) <= 1 && abs(start.Col-end.Col) <= 1 {
+            return true
+        }
+
+        isBlack := piece&Black != 0
+        if start.Row == end.Row && abs(start.Col-end.Col) == 2 {
+            intermediateCol := (start.Col + end.Col) / 2
+            intermediatePos := Position{Row: start.Row, Col: intermediateCol}
+            if b.IsCheck(isBlack) || b.IsCheckAfterMove(intermediatePos, isBlack) {
+                return false
+            }
+            if end.Col == 6 {
+                return (isBlack && start.Row == 7 && b.canCastleKingside(true)) || (!isBlack && start.Row == 0 && b.canCastleKingside(false))
+            }
+            if end.Col == 2 {
+                return (isBlack && start.Row == 7 && b.canCastleQueenside(true)) || (!isBlack && start.Row == 0 && b.canCastleQueenside(false))
+            }
+        }
+        return false
     case Pawn:
-        return b.isLegalPawnMove(piece, start, end)
-    }
-    return false // Unsupported piece type
-}
+        direction := 1
+        if piece&Black != 0 {
+            direction = -1
+        }
 
-// Implement legal move checks for each piece type (these can be expanded)
-func (b *Board) isLegalRookMove(start, end Position) bool {
-    // Rooks move in straight lines (same row or same column)
-    return (start.Row == end.Row || start.Col == end.Col) && b.isPathClear(start, end)
-}
-
-func (b *Board) isLegalKnightMove(start, end Position) bool {
-    // Knights move in an L-shape
-    rowDiff := abs(start.Row - end.Row)
-    colDiff := abs(start.Col - end.Col)
-    return (rowDiff == 2 && colDiff == 1) || (rowDiff == 1 && colDiff == 2)
-}
-
-func (b *Board) isLegalBishopMove(start, end Position) bool {
-    // Bishops move diagonally
-    return abs(start.Row-end.Row) == abs(start.Col-end.Col) && b.isPathClear(start, end)
-}
-
-func (b *Board) isLegalQueenMove(start, end Position) bool {
-    // Queens move like both a rook and a bishop
-    return b.isLegalRookMove(start, end) || b.isLegalBishopMove(start, end)
-}
-
-func (b *Board) isLegalKingMove(start, end Position) bool {
-    // Check if it's a normal one-square king move
-    if abs(start.Row-end.Row) <= 1 && abs(start.Col-end.Col) <= 1 {
-        return true
-    }
-    
-    // Castling logic
-    piece := b.GetPieceAt(start)
-    isBlack := piece&Black != 0
-    
-    // Castling kingside
-    if start.Row == end.Row && abs(start.Col-end.Col) == 2 {
-        if end.Col == 6 { // Kingside castling
-            if (isBlack && start.Row == 7 && b.canCastleKingside(true)) || (!isBlack && start.Row == 0 && b.canCastleKingside(false)) {
-                // Move the rook during castling
-                if isBlack {
-                    b.Squares[7][5] = b.Squares[7][7] // Move rook
-                    b.Squares[7][7] = 0
-                } else {
-                    b.Squares[0][5] = b.Squares[0][7] // Move rook
-                    b.Squares[0][7] = 0
-                }
+        if start.Col == end.Col && b.IsEmpty(end) {
+            if start.Row+direction == end.Row {
+                return true
+            }
+            if (start.Row == 1 && piece&White != 0 || start.Row == 6 && piece&Black != 0) && start.Row+2*direction == end.Row && b.IsEmpty(Position{start.Row + direction, start.Col}) {
                 return true
             }
         }
-        // Castling queenside
-        if end.Col == 2 { 
-            if (isBlack && start.Row == 7 && b.canCastleQueenside(true)) || (!isBlack && start.Row == 0 && b.canCastleQueenside(false)) {
-                // Move the rook during castling
-                if isBlack {
-                    b.Squares[7][3] = b.Squares[7][0] // Move rook
-                    b.Squares[7][0] = 0
-                } else {
-                    b.Squares[0][3] = b.Squares[0][0] // Move rook
-                    b.Squares[0][0] = 0
-                }
-                return true
+
+        if abs(start.Col-end.Col) == 1 && start.Row+direction == end.Row && !b.IsEmpty(end) && (b.GetPieceAt(end)&White != piece&White) {
+            return true
+        }
+
+        return b.canCaptureEnPassant(start, end, piece&Black != 0)
+    default:
+        return false
+    }
+}
+
+
+func (b *Board) IsCheckAfterMove(pos Position, isBlack bool) bool {
+    // Create a temporary copy of the board
+    tempBoard := *b
+
+    // Simulate the king's move to the new position
+    king := King
+    if isBlack {
+        king |= Black
+    } else {
+        king |= White
+    }
+
+    for row := 0; row < 8; row++ {
+        for col := 0; col < 8; col++ {
+            if tempBoard.Squares[row][col] == king {
+                tempBoard.Squares[row][col] = 0
             }
         }
     }
-    
-    return false
+    tempBoard.Squares[pos.Row][pos.Col] = king
+
+    // Check if the king is in check in the new position
+    return tempBoard.IsCheck(isBlack)
 }
-
-func (b *Board) isLegalPawnMove(piece int, start, end Position) bool {
-    direction := 1
-    if piece&Black != 0 {
-        direction = -1
-    }
-    
-    // Pawns move forward
-    if start.Col == end.Col && b.IsEmpty(end) {
-        if start.Row+direction == end.Row { 
-            return true
-        }
-        if (start.Row == 1 && piece&White != 0 || start.Row == 6 && piece&Black != 0) && start.Row+2*direction == end.Row && b.IsEmpty(Position{start.Row + direction, start.Col}) {
-            return true
-        }
-    }
-    
-    // Diagonal capture
-    if abs(start.Col-end.Col) == 1 && start.Row+direction == end.Row && !b.IsEmpty(end) && (b.GetPieceAt(end)&White != piece&White) {
-        return true
-    }
-    
-    // En passant
-    if b.canCaptureEnPassant(start, end, piece&Black != 0) {
-        return true
-    }
-
-    return false
-}
-
 
 func (b *Board) UndoMove(move Move) {
     b.Squares[move.Start.Row][move.Start.Col] = move.Piece
